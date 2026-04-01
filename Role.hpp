@@ -25,7 +25,6 @@ namespace final{
             : name(n), health(h), attack(a), alive(true), defensive(false) {
             ++aliveNumber;
         }
-        virtual ~Base() = default;
 
     public:
         // WARNING: NO OTHER PUBLIC FUNCTION IS ALLOWED TO BE ADDED.
@@ -40,6 +39,9 @@ namespace final{
         virtual void launch_attack(Base* target) = 0;
         // (4) defend (pure virtual; implemented by derived)
         virtual void defend(bool flag) = 0;
+
+        // Make destructor public virtual to allow deletion via Base*
+        virtual ~Base() = default;
 
         bool isAlive(){
             return alive;
@@ -106,15 +108,6 @@ namespace final{
         }
     };
 
-    // Helper to print kill message in correct format
-    inline void kill_and_announce(Base* who, const char* role){
-        if (who->alive) {
-            who->alive = false;
-            --Base::aliveNumber;
-            std::cout << role << ' ' << who->name << " is killed\n";
-        }
-    }
-
     void Fighter::launch_attack(Base *target) {
         int mult = (dynamic_cast<Caster*>(target) != nullptr) ? 2 : 1;
         if (target->defensive) {
@@ -127,22 +120,22 @@ namespace final{
             target->health -= attack * mult;
         }
 
-        bool target_dies = (target->health <= 0) && target->alive;
-        bool attacker_dies = (this->health <= 0) && this->alive;
+        // Determine death order: target first, then attacker
+        auto role_name = [](Base* ptr)->const char*{
+            if (dynamic_cast<Fighter*>(ptr)) return "Fighter";
+            if (dynamic_cast<Protector*>(ptr)) return "Protector";
+            return "Caster";
+        };
 
-        if (target_dies && attacker_dies) {
-            kill_and_announce(target, "Protector" /*placeholder*/);
-            // The above role must match target type; fix below by detecting type.
-        }
-        // We'll handle ordered printing generically below without duplication
-        // Print in required order
         if (target->health <= 0 && target->alive) {
-            if (dynamic_cast<Fighter*>(target)) kill_and_announce(target, "Fighter");
-            else if (dynamic_cast<Protector*>(target)) kill_and_announce(target, "Protector");
-            else if (dynamic_cast<Caster*>(target)) kill_and_announce(target, "Caster");
+            target->alive = false;
+            --Base::aliveNumber;
+            std::cout << role_name(target) << ' ' << target->name << " is killed\n";
         }
         if (this->health <= 0 && this->alive) {
-            kill_and_announce(this, "Fighter");
+            this->alive = false;
+            --Base::aliveNumber;
+            std::cout << role_name(this) << ' ' << this->name << " is killed\n";
         }
     }
 
@@ -158,13 +151,20 @@ namespace final{
             target->health -= attack * mult;
         }
 
+        auto role_name = [](Base* ptr)->const char*{
+            if (dynamic_cast<Fighter*>(ptr)) return "Fighter";
+            if (dynamic_cast<Protector*>(ptr)) return "Protector";
+            return "Caster";
+        };
         if (target->health <= 0 && target->alive) {
-            if (dynamic_cast<Fighter*>(target)) kill_and_announce(target, "Fighter");
-            else if (dynamic_cast<Protector*>(target)) kill_and_announce(target, "Protector");
-            else if (dynamic_cast<Caster*>(target)) kill_and_announce(target, "Caster");
+            target->alive = false;
+            --Base::aliveNumber;
+            std::cout << role_name(target) << ' ' << target->name << " is killed\n";
         }
         if (this->health <= 0 && this->alive) {
-            kill_and_announce(this, "Protector");
+            this->alive = false;
+            --Base::aliveNumber;
+            std::cout << role_name(this) << ' ' << this->name << " is killed\n";
         }
     }
 
@@ -179,16 +179,21 @@ namespace final{
             target->health -= attack * mult;
         }
 
+        auto role_name = [](Base* ptr)->const char*{
+            if (dynamic_cast<Fighter*>(ptr)) return "Fighter";
+            if (dynamic_cast<Protector*>(ptr)) return "Protector";
+            return "Caster";
+        };
         if (target->health <= 0 && target->alive) {
-            if (dynamic_cast<Fighter*>(target)) kill_and_announce(target, "Fighter");
-            else if (dynamic_cast<Protector*>(target)) kill_and_announce(target, "Protector");
-            else if (dynamic_cast<Caster*>(target)) kill_and_announce(target, "Caster");
+            target->alive = false;
+            --Base::aliveNumber;
+            std::cout << role_name(target) << ' ' << target->name << " is killed\n";
         }
         if (this->health <= 0 && this->alive) {
-            // Unlikely for caster since no recoil, but handle anyway
-            kill_and_announce(this, "Caster");
+            this->alive = false;
+            --Base::aliveNumber;
+            std::cout << role_name(this) << ' ' << this->name << " is killed\n";
         }
     }
 }
 #endif //ROLE_HPP
-
